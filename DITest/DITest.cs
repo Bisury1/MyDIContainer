@@ -1,9 +1,13 @@
 using DIContainer;
+using DIContainer.ActivatorEngine;
+using DIContainer;
 
 namespace DITest;
 
 public class DITest
 {
+    private readonly IActivatorEngine _activatorEngine = new ExpressionActivatorEngine();
+    
     private interface IScopeTest
     {
     }
@@ -23,7 +27,7 @@ public class DITest
 
     private IServiceCollection RegisterServiceAndCreateServiceCollection(ServiceLifetime lifetime)
     {
-        var builder = new ServiceCollectionBuilder();
+        var builder = new ServiceCollectionBuilder(_activatorEngine);
         if (lifetime == ServiceLifetime.Transient)
             builder.AddTransient<IScopeTest, TestScopeClass>();
         else if (lifetime == ServiceLifetime.Scoped)
@@ -37,15 +41,16 @@ public class DITest
     {
         var serviceCollection = RegisterServiceAndCreateServiceCollection(lifetime);
         IScope scope = serviceCollection.CreateScope();
-        T testClass1 = scope.RealizedService<T>();
-        T testClass2 = scope.RealizedService<T>();
+        T testClass1 = (T)scope.RealizedService(typeof(T));
+        T testClass2 = (T)scope.RealizedService(typeof(T));
         assertFunc1(testClass1, testClass2);
         if (assertFunc2 is null)
             return;
         IScope scope2 = serviceCollection.CreateScope();
-        T testClassFromAnotherScope = scope2.RealizedService<T>();
+        T testClassFromAnotherScope = (T)scope2.RealizedService(typeof(T));
         assertFunc2(testClass1, testClassFromAnotherScope);
     }
+    
     [Fact]
     public void TestTransientScope() 
         => TestScope<IScopeTest>(Assert.NotEqual, null, ServiceLifetime.Transient);
@@ -61,12 +66,12 @@ public class DITest
     [Fact]
     public void TestConstructor()
     {
-        IServiceCollectionBuilder builder = new ServiceCollectionBuilder();
+        IServiceCollectionBuilder builder = new ServiceCollectionBuilder(_activatorEngine);
         builder.AddTransient<IScopeTest, TestScopeClass>();
         builder.AddTransient<ClassWithCtor, ClassWithCtor>();
         var serviceCollection = builder.Build();
         IScope scope = serviceCollection.CreateScope();
-        var service = scope.RealizedService<ClassWithCtor>();
+        var service = (ClassWithCtor)scope.RealizedService(typeof(ClassWithCtor));
         Assert.NotNull(service.testClass);
     }
 }

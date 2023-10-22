@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 namespace DIContainer;
 
+
 internal class Scope : IScope
 {
     private readonly ServiceCollection _serviceCollection;
@@ -25,11 +26,6 @@ internal class Scope : IScope
                 _ => ScopeCreateInstance(serviceType));
 
         return _serviceCollection.RootScope.RealizedService(serviceType);
-    }
-
-    public TService RealizedService<TService>()
-    {
-        return (TService)RealizedService(typeof(TService));
     }
 
     private object ScopeCreateInstance(Type serviceType)
